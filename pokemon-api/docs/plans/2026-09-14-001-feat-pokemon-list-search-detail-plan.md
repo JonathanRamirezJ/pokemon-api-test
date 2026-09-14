@@ -1,7 +1,7 @@
 ---
 title: "feat: Listado, búsqueda y detalle de Pokémon (WOR-8)"
 type: feat
-status: active
+status: completed
 date: 2026-09-14
 ---
 
