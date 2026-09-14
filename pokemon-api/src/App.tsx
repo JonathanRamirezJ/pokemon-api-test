@@ -1,5 +1,5 @@
 function App() {
-  return <div />
+  return <div className="min-h-screen bg-slate-50" />
 }
 
 export default App
