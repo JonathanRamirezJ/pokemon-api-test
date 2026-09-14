@@ -1,32 +1,39 @@
-# React + TypeScript + Vite
+# pokemon-api
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Listado, búsqueda y detalle de Pokémon consumiendo [PokéAPI](https://pokeapi.co/).
 
-Currently, two official plugins are available:
+## Requisitos
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Node.js >= 22.22
 
-## React Compiler
+## Instalación
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## Scripts
+
+| Script | Descripción |
+|---|---|
+| `npm run dev` | Servidor de desarrollo |
+| `npm run build` | Compilación de producción |
+| `npm run preview` | Sirve la compilación de producción |
+| `npm run lint` | Linter (oxlint) |
+| `npm run typecheck` | Verificación de tipos sin empaquetar |
+| `npm test` | Pruebas unitarias (Vitest) |
+| `npm run test:watch` | Pruebas en modo observación |
+| `npm run test:coverage` | Pruebas con cobertura (umbral del 80%) |
+
+## Decisiones técnicas
+
+- **Paginación acumulativa.** «Cargar más» concatena lotes de 20 en lugar de
+  reemplazarlos, que es lo que hace posible que la búsqueda filtre todo lo ya
+  descargado sin volver a llamar a la API.
+- **Dónde vive cada estado.** La lista acumulada está en un contexto montado en
+  el layout, que nunca se desmonta; el texto de búsqueda está en la vista de
+  listado, que sí se desmonta al ir al detalle. Por eso al regresar se conserva
+  lo acumulado y el filtro aparece limpio, sin código de restauración.
+- **Las pruebas usan MSW**, interceptando a nivel de red en vez de mockear
+  axios, para que la capa de API se ejercite de verdad contra respuestas
+  controladas.
