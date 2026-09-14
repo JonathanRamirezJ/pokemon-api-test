@@ -2,8 +2,9 @@ import { act, renderHook, waitFor } from '@testing-library/react'
 import { HttpResponse, http } from 'msw'
 import { StrictMode, type ReactNode } from 'react'
 import { describe, expect, it } from 'vitest'
-import { API_BASE_URL, makeListResponse } from '../test/fixtures'
+import { API_BASE_URL } from '../test/fixtures'
 import { server } from '../test/server'
+import { countListRequests } from '../test/helpers'
 import { PokemonListProvider } from './PokemonListProvider'
 import { usePokemonList } from './usePokemonList'
 
@@ -20,23 +21,6 @@ function strictWrapper({ children }: { children: ReactNode }) {
 }
 
 /** Cuenta cuántas veces se pidió el listado, sea cual sea la página. */
-function countListRequests() {
-  const counter = { value: 0 }
-  server.use(
-    http.get(`${API_BASE_URL}/pokemon`, ({ request }) => {
-      counter.value += 1
-      const url = new URL(request.url)
-      return HttpResponse.json(
-        makeListResponse(
-          Number(url.searchParams.get('limit') ?? 20),
-          Number(url.searchParams.get('offset') ?? 0),
-        ),
-      )
-    }),
-  )
-  return counter
-}
-
 describe('carga inicial', () => {
   it('pide la primera página al montar y expone 20 items', async () => {
     const { result } = renderHook(() => usePokemonList(), { wrapper })

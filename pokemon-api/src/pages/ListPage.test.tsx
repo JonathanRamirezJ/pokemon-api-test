@@ -4,28 +4,12 @@ import { HttpResponse, http } from 'msw'
 import { MemoryRouter } from 'react-router'
 import { describe, expect, it } from 'vitest'
 import { PokemonListProvider } from '../context/PokemonListProvider'
-import { API_BASE_URL, makeListResponse } from '../test/fixtures'
+import { API_BASE_URL } from '../test/fixtures'
 import { server } from '../test/server'
+import { countListRequests } from '../test/helpers'
 import { ListPage } from './ListPage'
 
 /** Cuenta las peticiones al listado para probar que buscar no toca la red. */
-function countListRequests() {
-  const counter = { value: 0 }
-  server.use(
-    http.get(`${API_BASE_URL}/pokemon`, ({ request }) => {
-      counter.value += 1
-      const url = new URL(request.url)
-      return HttpResponse.json(
-        makeListResponse(
-          Number(url.searchParams.get('limit') ?? 20),
-          Number(url.searchParams.get('offset') ?? 0),
-        ),
-      )
-    }),
-  )
-  return counter
-}
-
 async function renderListPage() {
   const user = userEvent.setup()
   render(

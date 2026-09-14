@@ -4,8 +4,9 @@ import { HttpResponse, http } from 'msw'
 import { MemoryRouter } from 'react-router'
 import { describe, expect, it } from 'vitest'
 import { AppRoutes } from './routes'
-import { API_BASE_URL, makeListResponse } from './test/fixtures'
+import { API_BASE_URL } from './test/fixtures'
 import { server } from './test/server'
+import { countListRequests } from './test/helpers'
 
 function renderAt(path: string) {
   const user = userEvent.setup()
@@ -18,23 +19,6 @@ function renderAt(path: string) {
 }
 
 /** Cuenta las peticiones al listado a partir de este momento. */
-function countListRequests() {
-  const counter = { value: 0 }
-  server.use(
-    http.get(`${API_BASE_URL}/pokemon`, ({ request }) => {
-      counter.value += 1
-      const url = new URL(request.url)
-      return HttpResponse.json(
-        makeListResponse(
-          Number(url.searchParams.get('limit') ?? 20),
-          Number(url.searchParams.get('offset') ?? 0),
-        ),
-      )
-    }),
-  )
-  return counter
-}
-
 const searchBox = () => screen.getByRole('searchbox')
 
 describe('rutas', () => {
