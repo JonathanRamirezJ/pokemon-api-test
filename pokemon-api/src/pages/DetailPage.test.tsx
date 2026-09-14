@@ -119,6 +119,25 @@ describe('casos límite del detalle', () => {
     expect(screen.getByText(/sin imagen disponible/i)).toBeInTheDocument()
   })
 
+  it('no muestra «NaN» cuando una respuesta malformada omite altura y peso', async () => {
+    server.use(
+      http.get(`${API_BASE_URL}/pokemon/:identifier`, () =>
+        HttpResponse.json({
+          name: 'charmander',
+          sprites: { front_default: null },
+          abilities: [],
+        }),
+      ),
+    )
+
+    renderDetail()
+    await screen.findByRole('heading', { name: /charmander/i })
+
+    expect(screen.queryByText(/nan/i)).not.toBeInTheDocument()
+    expect(screen.getByText(/altura/i).parentElement).toHaveTextContent('—')
+    expect(screen.getByText(/peso/i).parentElement).toHaveTextContent('—')
+  })
+
   it('avisa explícitamente cuando el Pokémon no tiene habilidades', async () => {
     server.use(
       http.get(`${API_BASE_URL}/pokemon/:identifier`, () =>

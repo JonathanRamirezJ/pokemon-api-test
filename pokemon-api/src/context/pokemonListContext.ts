@@ -10,6 +10,8 @@ export interface PokemonListContextValue {
   error: string | null
   hasMore: boolean
   loadMore: () => Promise<void>
+  /** Descarta un error de un intento anterior que ya no describe el estado actual. */
+  clearError: () => void
 }
 
 export const PokemonListContext = createContext<PokemonListContextValue | null>(null)

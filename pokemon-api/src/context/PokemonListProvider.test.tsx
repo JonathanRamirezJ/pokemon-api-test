@@ -1,8 +1,8 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
-import { HttpResponse, http } from 'msw'
+import { HttpResponse, delay, http } from 'msw'
 import { StrictMode, type ReactNode } from 'react'
 import { describe, expect, it } from 'vitest'
-import { API_BASE_URL } from '../test/fixtures'
+import { API_BASE_URL, makeListResponse } from '../test/fixtures'
 import { server } from '../test/server'
 import { countListRequests } from '../test/helpers'
 import { PokemonListProvider } from './PokemonListProvider'
@@ -160,6 +160,53 @@ describe('cargar más', () => {
 
     expect(result.current.items).toHaveLength(20)
     expect(result.current.error).toMatch(/no se pudo obtener/i)
+  })
+})
+
+describe('gestión del error', () => {
+  it('descarta el error con clearError', async () => {
+    server.use(
+      http.get(`${API_BASE_URL}/pokemon`, () =>
+        HttpResponse.json({ error: 'boom' }, { status: 500 }),
+      ),
+    )
+    const { result } = renderHook(() => usePokemonList(), { wrapper })
+    await waitFor(() => expect(result.current.error).not.toBeNull())
+
+    act(() => {
+      result.current.clearError()
+    })
+
+    expect(result.current.error).toBeNull()
+  })
+
+  it('limpia el error en cuanto arranca un intento nuevo, sin esperar a que resuelva', async () => {
+    server.use(
+      http.get(`${API_BASE_URL}/pokemon`, () =>
+        HttpResponse.json({ error: 'boom' }, { status: 500 }),
+      ),
+    )
+    const { result } = renderHook(() => usePokemonList(), { wrapper })
+    await waitFor(() => expect(result.current.error).not.toBeNull())
+
+    server.use(
+      http.get(`${API_BASE_URL}/pokemon`, async () => {
+        await delay(50)
+        return HttpResponse.json(makeListResponse(20, 0))
+      }),
+    )
+    let pending: Promise<void>
+    act(() => {
+      pending = result.current.loadMore()
+    })
+
+    // Todavía en vuelo: el banner del intento anterior ya no debe estar.
+    expect(result.current.status).toBe('loading')
+    expect(result.current.error).toBeNull()
+    await act(async () => {
+      await pending
+    })
+    expect(result.current.items).toHaveLength(20)
   })
 })
 

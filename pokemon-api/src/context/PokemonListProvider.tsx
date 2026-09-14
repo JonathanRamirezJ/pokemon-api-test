@@ -37,6 +37,9 @@ export function PokemonListProvider({ children }: { children: ReactNode }) {
     if (inFlight.current) return
     inFlight.current = true
     setStatus('loading')
+    // El error del intento anterior deja de describir el estado actual en
+    // cuanto arranca uno nuevo.
+    setError(null)
 
     try {
       const page = await getPokemonPage(url ? { url } : {})
@@ -64,6 +67,8 @@ export function PokemonListProvider({ children }: { children: ReactNode }) {
     await load(nextRef.current)
   }, [load])
 
+  const clearError = useCallback(() => setError(null), [])
+
   useEffect(() => {
     if (initialLoadStarted.current) return
     initialLoadStarted.current = true
@@ -71,8 +76,8 @@ export function PokemonListProvider({ children }: { children: ReactNode }) {
   }, [load])
 
   const value = useMemo<PokemonListContextValue>(
-    () => ({ items, status, error, hasMore: next !== null, loadMore }),
-    [items, status, error, next, loadMore],
+    () => ({ items, status, error, hasMore: next !== null, loadMore, clearError }),
+    [items, status, error, next, loadMore, clearError],
   )
 
   return <PokemonListContext value={value}>{children}</PokemonListContext>

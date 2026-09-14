@@ -13,8 +13,12 @@ interface DetailResult {
   error: string | null
 }
 
-/** La API entrega decímetros y hectogramos; el usuario espera metros y kilos. */
+/**
+ * La API entrega decímetros y hectogramos; el usuario espera metros y kilos.
+ * Una respuesta malformada no debe acabar mostrando «NaN» en pantalla.
+ */
 function formatDecimal(value: number): string {
+  if (!Number.isFinite(value)) return '—'
   return (value / 10).toFixed(1).replace('.', ',')
 }
 
@@ -104,11 +108,11 @@ export function DetailPage() {
             <dl className="grid grid-cols-2 gap-4">
               <div>
                 <dt className="text-sm text-slate-500">Altura</dt>
-                <dd className="text-lg text-slate-900">{formatDecimal(detail.height)} m</dd>
+                <dd className="text-lg text-slate-900">{formatDecimal(detail.height)}{Number.isFinite(detail.height) ? ' m' : ''}</dd>
               </div>
               <div>
                 <dt className="text-sm text-slate-500">Peso</dt>
-                <dd className="text-lg text-slate-900">{formatDecimal(detail.weight)} kg</dd>
+                <dd className="text-lg text-slate-900">{formatDecimal(detail.weight)}{Number.isFinite(detail.weight) ? ' kg' : ''}</dd>
               </div>
             </dl>
 

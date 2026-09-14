@@ -67,6 +67,49 @@ describe('listado', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(/no se pudo obtener/i)
   })
 
+  it('ofrece reintentar cuando la carga inicial falla, en vez de dejar al usuario sin salida', async () => {
+    const user = userEvent.setup()
+    server.use(
+      http.get(`${API_BASE_URL}/pokemon`, () =>
+        HttpResponse.json({ error: 'boom' }, { status: 500 }),
+      ),
+    )
+    render(
+      <MemoryRouter>
+        <PokemonListProvider>
+          <ListPage />
+        </PokemonListProvider>
+      </MemoryRouter>,
+    )
+    await screen.findByRole('alert')
+
+    // Cargar más no puede aparecer: el cursor solo se fija al tener éxito.
+    expect(screen.queryByRole('button', { name: /cargar más/i })).not.toBeInTheDocument()
+    server.resetHandlers()
+    await user.click(screen.getByRole('button', { name: /reintentar/i }))
+
+    expect(await screen.findByText('bulbasaur')).toBeInTheDocument()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it('no anuncia «no hay Pokémon» junto al error: el error ya lo explica', async () => {
+    server.use(
+      http.get(`${API_BASE_URL}/pokemon`, () =>
+        HttpResponse.json({ error: 'boom' }, { status: 500 }),
+      ),
+    )
+    render(
+      <MemoryRouter>
+        <PokemonListProvider>
+          <ListPage />
+        </PokemonListProvider>
+      </MemoryRouter>,
+    )
+    await screen.findByRole('alert')
+
+    expect(screen.queryByText(/no hay pokémon que mostrar/i)).not.toBeInTheDocument()
+  })
+
   it('no muestra ningún botón Regresar', async () => {
     await renderListPage()
 
@@ -167,6 +210,18 @@ describe('búsqueda', () => {
 
     expect(screen.getByText(/ningún pokémon coincide con «zzzz»/i)).toBeInTheDocument()
     expect(screen.queryAllByRole('link')).toHaveLength(0)
+  })
+
+  it('nombra en el aviso el filtro aplicado, no lo que el usuario sigue tecleando', async () => {
+    const { user } = await renderListPage()
+    await user.type(searchBox(), 'zzzz')
+    await user.click(searchButton())
+
+    // Seguir escribiendo sin pulsar Buscar no cambia el filtro en vigor.
+    await user.type(searchBox(), 'yyy')
+
+    expect(screen.getByText(/ningún pokémon coincide con «zzzz»/i)).toBeInTheDocument()
+    expect(screen.queryByText(/zzzzyyy/)).not.toBeInTheDocument()
   })
 
   it('no realiza ninguna petición a la API durante todo el ciclo de búsqueda', async () => {

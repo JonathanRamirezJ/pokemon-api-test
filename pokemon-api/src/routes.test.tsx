@@ -85,6 +85,31 @@ describe('ida y vuelta entre listado y detalle', () => {
     expect(counter.value).toBe(0)
   })
 
+  it('no arrastra al listado el banner de error de un intento anterior', async () => {
+    const { user } = renderAt('/')
+    await screen.findByText('bulbasaur')
+
+    // Un Cargar más que falla deja el error en el contexto, que sobrevive
+    // a la navegación porque el proveedor vive en el layout.
+    server.use(
+      http.get(`${API_BASE_URL}/pokemon`, () =>
+        HttpResponse.json({ error: 'boom' }, { status: 500 }),
+      ),
+    )
+    await user.click(screen.getByRole('button', { name: /cargar más/i }))
+    expect(await screen.findByRole('alert')).toBeInTheDocument()
+    server.resetHandlers()
+
+    await user.click(screen.getByRole('link', { name: /charmander/i }))
+    await screen.findByRole('heading', { name: /charmander/i })
+    await user.click(screen.getByRole('button', { name: /regresar/i }))
+    await screen.findByText('bulbasaur')
+
+    // Los 20 items siguen ahí y nada está en vuelo: el error ya no aplica.
+    expect(screen.getAllByRole('link')).toHaveLength(20)
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
   it('retira el botón Regresar al volver al listado', async () => {
     const { user } = renderAt('/')
     await screen.findByText('bulbasaur')
